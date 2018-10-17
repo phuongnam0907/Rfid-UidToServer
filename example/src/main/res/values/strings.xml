@@ -1,6 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Things RC522</string>
     <string name="start">Start</string>
+    <string name="write">Write</string>
+    <string name="read">Read</string>
+    <string name="wait">Waiting...</string>
     <string name="reading">Reading</string>
     <string name="tag_detected">Tag detected:</string>
     <string name="tag_uid">UID: %1$s</string>
