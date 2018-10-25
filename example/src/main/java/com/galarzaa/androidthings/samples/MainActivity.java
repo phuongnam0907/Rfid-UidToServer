@@ -57,7 +57,7 @@ public class MainActivity extends Activity implements NPNHomeView {
     private static final String PIN_ARLET = "BCM19";
     private static final String PIN_DEFAULT = "BCM13";
 
-    private static final String url = "http://demo1.chipfc.com/SensorValue/update?sensorid=7&sensorvalue=[";
+    private static final String url = "http://demo1.chipfc.com/SensorValue/update?sensorid=7&sensorvalue=";
 
     String resultsText = "";
 
@@ -144,7 +144,7 @@ public class MainActivity extends Activity implements NPNHomeView {
 
     @Override
     public void onSuccessUpdateServer(String message) {
-        if (message.indexOf("CODE") >= 0 && message.indexOf("200") > 0 ) {
+        if (message.indexOf("OK") >= 0 && message.indexOf("200") >= 0 ) {
             Log.d("Send", "success!!!");
             Toast.makeText(this,"Success!!!!!!",Toast.LENGTH_SHORT).show();
         }
@@ -283,7 +283,7 @@ public class MainActivity extends Activity implements NPNHomeView {
                 mTagUidView.setText(getString(R.string.tag_uid,rc522.getUidString()));
                 String uid = rc522.getUidString("");
                 Log.d(TAG,"UID: " + uid);
-                urlResult = url + uid +"]";
+                urlResult = url + uid;
                 mHomeViewModel.updateToServer(urlResult);
                 //Log.d("URL: ",urlResult);
                 urlResult = "";
