@@ -12,6 +12,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.galarzaa.androidthings.Rc522;
+import com.galarzaa.androidthings.samples.MVVM.VM.NPNHomeViewModel;
+import com.galarzaa.androidthings.samples.MVVM.View.NPNHomeView;
 import com.google.android.things.pio.Gpio;
 import com.google.android.things.pio.PeripheralManager;
 import com.google.android.things.pio.SpiDevice;
@@ -24,7 +26,7 @@ import java.util.TimerTask;
 
 import static android.content.ContentValues.TAG;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements NPNHomeView {
     private Rc522 mRc522;
     RfidTask mRfidTask;
     private TextView mTagDetectedView;
@@ -55,7 +57,11 @@ public class MainActivity extends Activity {
     private static final String PIN_ARLET = "BCM19";
     private static final String PIN_DEFAULT = "BCM13";
 
+    private static final String url = "http://demo1.chipfc.com/SensorValue/update?sensorid=7&sensorvalue=[";
+
     String resultsText = "";
+
+    private NPNHomeViewModel mHomeViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +71,10 @@ public class MainActivity extends Activity {
         mTagDetectedView = (TextView)findViewById(R.id.tag_read);
         mTagUidView = (TextView)findViewById(R.id.tag_uid);
         mTagResultsView = (TextView) findViewById(R.id.tag_results);
+
+        //Initiate NPNHomeView Object
+        mHomeViewModel = new NPNHomeViewModel();
+        mHomeViewModel.attach(this, this);
 
         button = (Button)findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
@@ -132,6 +142,20 @@ public class MainActivity extends Activity {
         }
     }
 
+    @Override
+    public void onSuccessUpdateServer(String message) {
+        if (message.indexOf("CODE") >= 0 && message.indexOf("200") > 0 ) {
+            Log.d("Send", "success!!!");
+            Toast.makeText(this,"Success!!!!!!",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onErrorUpdateServer(String message) {
+        Log.d(TAG,"Upload server failed!!!!");
+        Toast.makeText(this,"Upload Failed!",Toast.LENGTH_SHORT).show();
+    }
+
     private class RfidTask extends AsyncTask<Object, Object, Boolean> {
         private static final String TAG = "RfidTask";
         private Rc522 rc522;
@@ -144,6 +168,7 @@ public class MainActivity extends Activity {
         protected void onPreExecute() {
             if (state >= 9) state = 0;
             button.setEnabled(false);
+            readButton.setEnabled(false);
             mTagResultsView.setVisibility(View.GONE);
             mTagDetectedView.setVisibility(View.GONE);
             mTagUidView.setVisibility(View.GONE);
@@ -175,6 +200,7 @@ public class MainActivity extends Activity {
 
         @Override
         protected void onPostExecute(Boolean success) {
+            String urlResult = "";
             if(!success){
                 mTagResultsView.setText(R.string.unknown_error);
                 return;
@@ -182,7 +208,7 @@ public class MainActivity extends Activity {
             // Try to avoid doing any non RC522 operations until you're done communicating with it.
             byte address = Rc522.getBlockAddress(2,1);
             // Mifare's card default key A and key B, the key may have been changed previously
-            byte[] key = {(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF};
+            byte[] key = {(byte)0xFF, (byte)0xFf, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF};
             state++;
             //byte[] key = getKey(state).getBytes();
             // Each sector holds 16 bytes
@@ -220,7 +246,7 @@ public class MainActivity extends Activity {
                 resultsText += "\nSector read successfully: "+ new String(buffer) +"\n" + Rc522.dataToHexString(buffer);
                 rc522.stopCrypto();
                 mTagResultsView.setText(resultsText);
-                if(rc522.getUidString().indexOf("147") >= 0) checkIn = true;
+                if(rc522.getUidString().indexOf("147") >= 0 & result == true) checkIn = true;
                 else checkIn = false;
             }finally{
                 if (isRead) {
@@ -255,6 +281,12 @@ public class MainActivity extends Activity {
                 readButton.setText(R.string.read);
 
                 mTagUidView.setText(getString(R.string.tag_uid,rc522.getUidString()));
+                String uid = rc522.getUidString("");
+                Log.d(TAG,"UID: " + uid);
+                urlResult = url + uid +"]";
+                mHomeViewModel.updateToServer(urlResult);
+                //Log.d("URL: ",urlResult);
+                urlResult = "";
                 mTagResultsView.setVisibility(View.VISIBLE);
                 mTagDetectedView.setVisibility(View.VISIBLE);
                 mTagUidView.setVisibility(View.VISIBLE);
@@ -332,4 +364,6 @@ public class MainActivity extends Activity {
             }
         }
     };
+
+
 }
